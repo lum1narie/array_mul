@@ -37,7 +37,10 @@ void reversed_idx_array_mul(float A[ARRAY_SIZ][ARRAY_SIZ], float x[ARRAY_SIZ],
 double measure_ms_array_mul(array_mul_func mul_f, array_preprocess_func pre_f,
                             size_t rep_n = 100) {
   float A[ARRAY_SIZ][ARRAY_SIZ];
-  float x[rep_n][ARRAY_SIZ], y[rep_n][ARRAY_SIZ];
+  float **x = new float *[rep_n];
+  float **y = new float *[rep_n];
+
+  // float x[rep_n][ARRAY_SIZ], y[rep_n][ARRAY_SIZ];
 
   // initialize arrays
   for (size_t i = 0; i < ARRAY_SIZ; ++i) {
@@ -45,7 +48,11 @@ double measure_ms_array_mul(array_mul_func mul_f, array_preprocess_func pre_f,
       A[i][j] = float(i + j);
     }
   }
+
   for (size_t i = 0; i < rep_n; ++i) {
+    x[i] = new float[ARRAY_SIZ];
+    y[i] = new float[ARRAY_SIZ];
+
     for (size_t j = 0; j < ARRAY_SIZ; ++j) {
       x[i][j] = float(i - j);
       y[i][j] = 0;
@@ -71,6 +78,14 @@ double measure_ms_array_mul(array_mul_func mul_f, array_preprocess_func pre_f,
       std::chrono::duration_cast<std::chrono::microseconds>(end - start)
           .count() /
       1000.0 / rep_n;
+
+  for (size_t i = 0; i < rep_n; ++i) {
+    delete[] x[i];
+    delete[] y[i];
+  }
+  delete[] x;
+  delete[] y;
+
   return elapsed_ms_per_rep;
 }
 
@@ -141,9 +156,9 @@ int main() {
       "native_array_mul",
       measure_ms_array_mul(naive_array_mul, do_nothing_preprocess));
 
-  show_measurement(
-      "reversed_array_mul",
-      measure_ms_array_mul(reversed_idx_array_mul, do_nothing_preprocess));
+  show_measurement("reversed_array_mul",
+                   measure_ms_array_mul(reversed_idx_array_mul,
+                                        do_nothing_preprocess));
 
   show_verification("native_array_mul", "reversed_array_mul",
                     verify_array_mul(naive_array_mul, do_nothing_preprocess,
