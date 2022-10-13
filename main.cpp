@@ -64,11 +64,11 @@ double measure_ms_array_mul(array_mul_func mul_f, array_preprocess_func pre_f,
   end = std::chrono::system_clock::now();
   // ----------------------------------------
 
-  double elapsed_ms =
+  double elapsed_ms_per_rep =
       std::chrono::duration_cast<std::chrono::microseconds>(end - start)
           .count() /
-      1000.0;
-  return elapsed_ms;
+      1000.0 / rep_n;
+  return elapsed_ms_per_rep;
 }
 
 #define VERIFY_VAL_RANGE 100.0
