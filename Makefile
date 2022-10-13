@@ -1,5 +1,5 @@
 CXX = g++
-CFLAGS_COMMON = -std=c++20 -Wall -Wextra
+CFLAGS_COMMON = -std=c++20 -fopenmp -Wall -Wextra
 CFLAGS = -O3 $(CFLAGS_COMMON)
 CFLAGS_UNOPTIMIZED = -O0 $(CFLAGS_COMMON)
 TARGET = main
