@@ -1,6 +1,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <omp.h>
 #include <random>
 
 #define ARRAY_SIZ 1000
@@ -31,6 +32,20 @@ void reversed_idx_array_mul(float A[ARRAY_SIZ][ARRAY_SIZ], float x[ARRAY_SIZ],
       y[i] += A[i][j] * x[j];
     }
   }
+  return;
+}
+
+void parallel_array_mul(float A_T[ARRAY_SIZ][ARRAY_SIZ], float x[ARRAY_SIZ],
+                        float y[ARRAY_SIZ]) {
+  size_t i, j;
+#pragma omp parallel for
+  for (i = 0; i < ARRAY_SIZ; ++i) {
+#pragma omp parallel for reduction(+ : y[i])
+    for (j = 0; j < ARRAY_SIZ; ++j) {
+      y[i] += A_T[i][j] * x[j];
+    }
+  }
+
   return;
 }
 
@@ -156,13 +171,22 @@ int main() {
       "native_array_mul",
       measure_ms_array_mul(naive_array_mul, do_nothing_preprocess));
 
-  show_measurement("reversed_array_mul",
-                   measure_ms_array_mul(reversed_idx_array_mul,
-                                        do_nothing_preprocess));
+  show_measurement(
+      "reversed_array_mul",
+      measure_ms_array_mul(reversed_idx_array_mul, do_nothing_preprocess));
+
+  show_measurement(
+      "parallel_array_mul",
+      measure_ms_array_mul(parallel_array_mul, do_nothing_preprocess));
 
   show_verification("native_array_mul", "reversed_array_mul",
                     verify_array_mul(naive_array_mul, do_nothing_preprocess,
                                      reversed_idx_array_mul,
+                                     do_nothing_preprocess));
+
+  show_verification("native_array_mul", "parallel_array_mul",
+                    verify_array_mul(naive_array_mul, do_nothing_preprocess,
+                                     parallel_array_mul,
                                      do_nothing_preprocess));
   return 0;
 }
