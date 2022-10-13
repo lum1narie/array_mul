@@ -21,11 +21,11 @@ void naive_array_mul(float A[ARRAY_SIZ][ARRAY_SIZ], float x[ARRAY_SIZ],
   return;
 }
 
-void reversed_idx_array_mul(float A_T[ARRAY_SIZ][ARRAY_SIZ], float x[ARRAY_SIZ],
+void reversed_idx_array_mul(float A[ARRAY_SIZ][ARRAY_SIZ], float x[ARRAY_SIZ],
                             float y[ARRAY_SIZ]) {
   for (auto j = 0; j < ARRAY_SIZ; ++j) {
     for (auto i = 0; i < ARRAY_SIZ; ++i) {
-      y[i] += A_T[i][j] * x[j];
+      y[i] += A[i][j] * x[j];
     }
   }
   return;
