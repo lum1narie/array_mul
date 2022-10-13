@@ -1,6 +1,7 @@
 CXX = g++
-CFLAGS = -O3 -std=c++20
-CFLAGS_UNOPTIMIZED = -O0 -std=c++20
+CFLAGS_COMMON = -std=c++20 -Wall -Wextra
+CFLAGS = -O3 $(CFLAGS_COMMON)
+CFLAGS_UNOPTIMIZED = -O0 $(CFLAGS_COMMON)
 TARGET = main
 TARGETS = $(BUILDDIR)/$(TARGET) $(BUILDDIR)/$(TARGET)_unoptimized
 SRCS = main.cpp
