@@ -10,31 +10,22 @@ using array_mul_func = void (*)(float[ARRAY_SIZ][ARRAY_SIZ], float[ARRAY_SIZ],
 using array_preprocess_func = void (*)(float[ARRAY_SIZ][ARRAY_SIZ]);
 
 void do_nothing_preprocess(float A[ARRAY_SIZ][ARRAY_SIZ]) { return; }
+
 void naive_array_mul(float A[ARRAY_SIZ][ARRAY_SIZ], float x[ARRAY_SIZ],
                      float y[ARRAY_SIZ]) {
   for (auto i = 0; i < ARRAY_SIZ; ++i) {
     for (auto j = 0; j < ARRAY_SIZ; ++j) {
-      y[i] += A[i][j] * x[i];
+      y[i] += A[i][j] * x[j];
     }
   }
   return;
 }
 
-void reverse_preprocess(float A[ARRAY_SIZ][ARRAY_SIZ]) {
-  for (int i = 1; i < ARRAY_SIZ; ++i) {
-    for (int j = 0; j < i; ++j) {
-      float tmp = A[i][j];
-      A[i][j] = A[j][i];
-      A[j][i] = tmp;
-    }
-  }
-  return;
-}
 void reversed_idx_array_mul(float A_T[ARRAY_SIZ][ARRAY_SIZ], float x[ARRAY_SIZ],
                             float y[ARRAY_SIZ]) {
   for (auto j = 0; j < ARRAY_SIZ; ++j) {
     for (auto i = 0; i < ARRAY_SIZ; ++i) {
-      y[i] += A_T[j][i] * x[i];
+      y[i] += A_T[i][j] * x[j];
     }
   }
   return;
@@ -149,11 +140,11 @@ int main() {
 
   show_measurement(
       "reversed_array_mul",
-      measure_ms_array_mul(reversed_idx_array_mul, reverse_preprocess));
+      measure_ms_array_mul(reversed_idx_array_mul, do_nothing_preprocess));
 
   show_verification("native_array_mul", "reversed_array_mul",
                     verify_array_mul(naive_array_mul, do_nothing_preprocess,
                                      reversed_idx_array_mul,
-                                     reverse_preprocess));
+                                     do_nothing_preprocess));
   return 0;
 }
