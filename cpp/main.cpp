@@ -1,3 +1,4 @@
+#include "xorshift.h"
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -104,6 +105,74 @@ double measure_ms_array_mul(array_mul_func mul_f, array_preprocess_func pre_f,
   return elapsed_ms_per_rep;
 }
 
+void gen_mask(bool ret[ARRAY_SIZ][ARRAY_SIZ], float ratio = 0.05,
+              uint32_t seed = 42) {
+  set_xor32_seed(seed);
+  for (size_t i = 0; i < ARRAY_SIZ; ++i) {
+    for (size_t j = 0; j < ARRAY_SIZ; ++j) {
+      uint32_t rand_num = xorshift32();
+      ret[i][j] = ((float)rand_num / (float)0xFFFFFFFFUL) < ratio;
+    }
+  }
+}
+
+double measure_ms_sparse_array_mul(array_mul_func mul_f,
+                                   array_preprocess_func pre_f,
+                                   bool mask[ARRAY_SIZ][ARRAY_SIZ],
+                                   size_t rep_n = 100) {
+  float A[ARRAY_SIZ][ARRAY_SIZ];
+  float **x = new float *[rep_n];
+  float **y = new float *[rep_n];
+
+  // float x[rep_n][ARRAY_SIZ], y[rep_n][ARRAY_SIZ];
+
+  // initialize arrays
+  for (size_t i = 0; i < ARRAY_SIZ; ++i) {
+    for (size_t j = 0; j < ARRAY_SIZ; ++j) {
+      A[i][j] = mask[i][j] ? float(i + j) : 0;
+    }
+  }
+
+  for (size_t i = 0; i < rep_n; ++i) {
+    x[i] = new float[ARRAY_SIZ];
+    y[i] = new float[ARRAY_SIZ];
+
+    for (size_t j = 0; j < ARRAY_SIZ; ++j) {
+      x[i][j] = float(i - j);
+      y[i][j] = 0;
+    }
+  }
+
+  // measurement
+  // ----------------------------------------
+  std::chrono::system_clock::time_point start, end;
+  start = std::chrono::system_clock::now();
+
+  // preprocess
+  pre_f(A);
+
+  // calc queue
+  for (size_t i = 0; i < rep_n; ++i) {
+    mul_f(A, x[i], y[i]);
+  }
+  end = std::chrono::system_clock::now();
+  // ----------------------------------------
+
+  double elapsed_ms_per_rep =
+      std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+          .count() /
+      1000.0 / rep_n;
+
+  for (size_t i = 0; i < rep_n; ++i) {
+    delete[] x[i];
+    delete[] y[i];
+  }
+  delete[] x;
+  delete[] y;
+
+  return elapsed_ms_per_rep;
+}
+
 #define VERIFY_VAL_RANGE 100.0
 #define VERIFY_EPS 1e-7
 
@@ -166,7 +235,11 @@ void show_verification(std::string title1, std::string title2, bool result) {
             << std::endl;
 }
 
+bool mask[ARRAY_SIZ][ARRAY_SIZ];
+
 int main() {
+  std::cout << "dense array" << std::endl;
+
   show_measurement(
       "native_array_mul",
       measure_ms_array_mul(naive_array_mul, do_nothing_preprocess));
@@ -178,6 +251,25 @@ int main() {
   show_measurement(
       "parallel_array_mul",
       measure_ms_array_mul(parallel_array_mul, do_nothing_preprocess));
+
+  std::cout << std::string(40, '-') << std::endl;
+
+  std::cout << "sparse array(0.05)" << std::endl;
+  gen_mask(mask);
+
+  show_measurement("native_array_mul",
+                   measure_ms_sparse_array_mul(naive_array_mul,
+                                               do_nothing_preprocess, mask));
+
+  show_measurement("reversed_array_mul",
+                   measure_ms_sparse_array_mul(reversed_idx_array_mul,
+                                               do_nothing_preprocess, mask));
+
+  show_measurement("parallel_array_mul",
+                   measure_ms_sparse_array_mul(parallel_array_mul,
+                                               do_nothing_preprocess, mask));
+
+  std::cout << std::string(40, '-') << std::endl;
 
   show_verification("native_array_mul", "reversed_array_mul",
                     verify_array_mul(naive_array_mul, do_nothing_preprocess,
